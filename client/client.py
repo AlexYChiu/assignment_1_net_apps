@@ -1,7 +1,15 @@
+"""
+    Client side of Assignment 1 for ECE 4564. 
+    Handles:
+    1. Capturing tweet given hashtag argument.
+    2. Sending question from tweet to server. 
+    3. Speaks Answer from server. 
+"""
+
 import sys
 import argparse
 
-parser = argparse.ArgumentParser(description='Process some arguments.')
+parser = argparse.ArgumentParser(description='Prossesses arguments for client.')
 parser.add_argument('-s', help='Set the server ip address.')
 parser.add_argument('-p', help='Set the server port.')
 parser.add_argument('-z', help='Set the socket size')
