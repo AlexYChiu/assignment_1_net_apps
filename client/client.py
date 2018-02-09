@@ -8,8 +8,11 @@
 
 import sys
 import argparse
-import tweepy
 import os
+
+import tweepy
+
+from my_stream_listener import MyStreamListener
 
 parser = argparse.ArgumentParser(description='Prossesses arguments for client.')
 parser.add_argument('-s', help='Set the server ip address.')
@@ -32,6 +35,10 @@ if args.t == None:
     print('Please set hastag with the -t flag.')
     sys.exit(1)
 
+hashtag = args.t
+
+print('Hashtag: ' + hashtag)
+
 consumer_token =        os.environ['CONSUMER_TOKEN']
 consumer_secret =       os.environ['CONSUMER_SECRET']
 access_key =            os.environ['ACCESS_KEY']
@@ -42,8 +49,19 @@ auth.set_access_token(access_key, access_secret)
 
 api = tweepy.API(auth)
 
+# Testing to make sure valid connection to Twitter
 user = 'theasianchris1'
 api.get_user(user)
+# End Testing
 
+# Using info from http://docs.tweepy.org/en/v3.5.0/streaming_how_to.html
+#myStreamListener = MyStreamListener(hashtag)
+myStreamListener = MyStreamListener()
+myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
+
+track_list = []
+track_list.append(hashtag)
+
+myStream.filter(track=track_list)   # if we want a separate thread, add async=True
 
 print('Finished')
