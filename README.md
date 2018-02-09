@@ -2,8 +2,6 @@
 
 First assignment for ECE 4564.
 
-## 42
-
 ## Testing 
 
 To run tests, use the command in the "tests" directory: <br>

@@ -9,6 +9,7 @@
 
 import sys
 import argparse
+import socket 
 
 parser = argparse.ArgumentParser(description='Prossesses arguments for client.')
 parser.add_argument('-p', help='Set the server port.')
@@ -26,5 +27,33 @@ if args.b == None:
 if args.z == None:
     print('Please set socket size with the -z flag.')
     sys.exit(1)
+
+host = 'localhost'
+
+try:
+    port =      int(args.p)
+    backlog =   int(args.b)
+    size =      int(args.z)
+except Exception as ex:
+    print(ex)
+    sys.exit(1)
+
+print('Starting server on port ' + str(port) + '...')
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((host,port))  
+s.listen(backlog)
+
+print('Starting server on port ' + str(port) + '...')
+
+# Simple echo server for now.
+while 1:
+    client, address = s.accept()     
+    data = client.recv(size)    
+    if data: 
+        print('FOUND DATA: ' + data)        
+        client.send(data)   
+        client.close()  
+
 
 print('Finished')

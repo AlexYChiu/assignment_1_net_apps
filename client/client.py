@@ -9,10 +9,44 @@
 import sys
 import argparse
 import os
+import socket
 
 import tweepy
+from tweepy.api import API
 
-from my_stream_listener import MyStreamListener
+class MyStreamListener(tweepy.StreamListener):
+    '''Overides Tweepy's StreamListener 
+        |
+        --> https://github.com/tweepy/tweepy/blob/c8e473ed7b939e09a485d0eaa2390554f009a56b/tweepy/streaming.py
+    '''
+    
+    def __init__(self, hashtag):
+       self.hashtags = [hashtag]
+       super().__init__()                       # Keep this, needed for status = Status.parse(self.api, data) (in our case)
+       print('Started status streaming...')
+
+    def on_status(self, status):
+        """Prints incoming statuses with hashtag ommitted"""
+        tweet_words = status.text.split()
+        print(tweet_words)
+        question_words = [str(word) for word in tweet_words if word not in self.hashtags]
+        question = ' '.join(word for word in question_words)
+        try:
+            print('Question: ' + str(question.encode('utf8')))                              # this sometimes throws an OSError on Windows... microsoft can't hang.
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)                           # https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
+            s.connect((host,port))
+
+            # WIP HERE
+            message_str = '[%s] %s' % (bytes('utf_8'), question)
+
+            s.send(message_str)
+            data = s.recv(size)
+            s.close() 
+            print ('Received:', data) 
+
+        except Exception as ex:                                                              
+            print(ex)  
+
 
 parser = argparse.ArgumentParser(description='Prossesses arguments for client.')
 parser.add_argument('-s', help='Set the server ip address.')
@@ -35,7 +69,15 @@ if args.t == None:
     print('Please set hastag with the -t flag.')
     sys.exit(1)
 
-hashtag = args.t
+try:
+    hashtag = args.t
+    host = args.s
+    size = int(args.z)
+    port = int(args.p)
+except Exception as ex:
+    print(ex)
+    sys.exit(1)
+
 
 # Get needed information for authorization from environment variables
 consumer_token =        os.environ['CONSUMER_TOKEN']
@@ -55,6 +97,4 @@ myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
 track_list = []
 track_list.append(hashtag)
 
-myStream.filter(track=track_list)   # if we want a separate thread, add async=True
-
-print('Finished')
+myStream.filter(track=track_list)   # if we want a separate thread, add ", async=True" after track_list
