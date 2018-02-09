@@ -19,4 +19,7 @@ class MyStreamListener(tweepy.StreamListener):
         tweet_words = status.text.encode('utf8').split()
         question_words = [word for word in tweet_words if word not in self.hashtags]
         question = ' '.join(word.decode('utf-8') for word in question_words)
-        print('Question: ' + str(question))
+        try:
+            print('Question: ' + str(question.encode('utf8')))                              # this sometimes throws an OSError on Windows... microsoft can't hang.
+        except Exception as ex:                                                             # https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954 
+            print(ex)                                                                       # OSError: raw write() returned invalid length 300 (should have been between 0 and 150)                 
