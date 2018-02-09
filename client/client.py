@@ -48,11 +48,6 @@ auth.set_access_token(access_key, access_secret)
 
 api = tweepy.API(auth)
 
-# Testing to make sure valid connection to Twitter, will fail if keys, etc. not working
-user = 'theasianchris1'
-api.get_user(user)
-# End Testing
-
 # Using info from http://docs.tweepy.org/en/v3.5.0/streaming_how_to.html
 myStreamListener = MyStreamListener(hashtag=hashtag)
 myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
