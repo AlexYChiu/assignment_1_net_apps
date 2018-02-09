@@ -1,5 +1,5 @@
 """
-    Client side of Assignment 1 for ECE 4564.
+    Server side of Assignment 1 for ECE 4564.
     Handles:
     1. Receiving question from client. 
     2. Speaking question. 
