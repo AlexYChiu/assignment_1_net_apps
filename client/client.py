@@ -37,8 +37,7 @@ if args.t == None:
 
 hashtag = args.t
 
-print('Hashtag: ' + hashtag)
-
+# Get needed information for authorization from environment variables
 consumer_token =        os.environ['CONSUMER_TOKEN']
 consumer_secret =       os.environ['CONSUMER_SECRET']
 access_key =            os.environ['ACCESS_KEY']
@@ -49,14 +48,13 @@ auth.set_access_token(access_key, access_secret)
 
 api = tweepy.API(auth)
 
-# Testing to make sure valid connection to Twitter
+# Testing to make sure valid connection to Twitter, will fail if keys, etc. not working
 user = 'theasianchris1'
 api.get_user(user)
 # End Testing
 
 # Using info from http://docs.tweepy.org/en/v3.5.0/streaming_how_to.html
-#myStreamListener = MyStreamListener(hashtag)
-myStreamListener = MyStreamListener()
+myStreamListener = MyStreamListener(hashtag=hashtag)
 myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
 
 track_list = []
