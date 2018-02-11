@@ -14,6 +14,8 @@ import socket
 import tweepy
 from tweepy.api import API
 
+from clientKeys import ClientKeys
+
 class MyStreamListener(tweepy.StreamListener):
     '''Overides Tweepy's StreamListener 
         |
@@ -35,18 +37,18 @@ class MyStreamListener(tweepy.StreamListener):
             print('Question: ' + str(question.encode('utf8')))                              # this sometimes throws an OSError on Windows... microsoft can't hang.
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)                           # https://github.com/Microsoft/vscode/issues/39149#issuecomment-347260954
             s.connect((host,port))
+            
+            # Need to add encrpytion
 
-            # WIP HERE
-            message_str = '[%s] %s' % (bytes('utf_8'), question)
-
-            s.send(message_str)
+            b = bytearray()
+            b.extend(map(ord, question))
+            s.send(b)
             data = s.recv(size)
             s.close() 
             print ('Received:', data) 
 
         except Exception as ex:                                                              
             print(ex)  
-
 
 parser = argparse.ArgumentParser(description='Prossesses arguments for client.')
 parser.add_argument('-s', help='Set the server ip address.')
@@ -78,23 +80,28 @@ except Exception as ex:
     print(ex)
     sys.exit(1)
 
+track_list = []
+track_list.append(hashtag)
 
 # Get needed information for authorization from environment variables
-consumer_token =        os.environ['CONSUMER_TOKEN']
-consumer_secret =       os.environ['CONSUMER_SECRET']
-access_key =            os.environ['ACCESS_KEY']
-access_secret =         os.environ['ACCESS_SECRET']
+api_keys = ClientKeys() 
+consumer_token = api_keys.get_consumer_token()
+consumer_secret = api_keys.get_consumer_secret()
+access_key = api_keys.get_access_key()
+access_secret = api_keys.get_access_secret() 
 
 auth = tweepy.OAuthHandler(consumer_token, consumer_secret)
 auth.set_access_token(access_key, access_secret)
 
-api = tweepy.API(auth)
+try:
+    api = tweepy.API(auth)
 
-# Using info from http://docs.tweepy.org/en/v3.5.0/streaming_how_to.html
-myStreamListener = MyStreamListener(hashtag=hashtag)
-myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
+    # Using info from http://docs.tweepy.org/en/v3.5.0/streaming_how_to.html
+    myStreamListener = MyStreamListener(hashtag=hashtag)
+    myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
 
-track_list = []
-track_list.append(hashtag)
+    myStream.filter(track=track_list)   # if we want a separate thread, add ", async=True" after track_list
 
-myStream.filter(track=track_list)   # if we want a separate thread, add ", async=True" after track_list
+except KeyboardInterrupt:
+    print('Keyboard interrupt')
+    sys.exit(0)
