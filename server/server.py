@@ -30,7 +30,6 @@ def encrypt_data(data):
 
 def ask_wa(message):
     """Asks Wolfram Alpha messasge"""
-    print("APPID: {}".format(wolfram_alpha_appid))
     checkpoint("Sending question to Wolframalpha: {}".format(message))
 
     # TODO ask wa
