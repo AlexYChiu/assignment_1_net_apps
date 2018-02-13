@@ -3,18 +3,20 @@
 """
     Server side of Assignment 1 for ECE 4564.
     Handles:
-    1. Receiving question from client. 
-    2. Speaking question. 
+    1. Receiving question from client.
+    2. Speaking question.
     3. Sending a receiving from WolframAlpha API.
-    4. Sending answer to client. 
+    4. Sending answer to client.
 """
 
 import sys
 import argparse
-import socket 
+import socket
 
 from serverKeys import wolfram_alpha_appid
-
+from cryptography.fernet import Fernet
+import hashlib
+import pickle
 
 def checkpoint(message):
     """Prints [Checkpoint] <message>"""
@@ -44,9 +46,16 @@ def speak(message):
 
 def decrypt_data(data):
     """Verify md5 and decrypt data"""
-    key = "TODO"
-    plaintext = "TODO"
-    md5 = "TODO"
+    #data should be formatted (key, ciphertext, md5)
+    #newData = pickle.loads(data)
+
+    key = data[0]
+    cipher_suite = Fernet(key)
+    plaintext = cipher_suite.decrypt(data[1])
+
+    temp = hashlib.md5()
+    temp.update(data[1])
+    md5 = temp.digest()
 
     return key, plaintext, md5
 
@@ -54,16 +63,19 @@ def accept_connections(socket, size):
     """Repeatedly accepts and handles new client connections"""
     while 1:
         client, address = socket.accept()
-        
+
         data = client.recv(size)
         if data:
             checkpoint("Received data: {}".format(data))
-            
+
             # Decrypt data
-            recv_key, recv_plaintext, recv_md5 = decrypt_data(data)
+            decryptedData = pickle.loads(data)
+            recv_key, recv_plaintext, recv_md5 = decrypt_data(decryptedData)
             checkpoint("Checksum is {}".format(recv_md5))
-            # TODO
+            # TODO STILL need to compare to the md5 sent over to verify and output VALID
             #if recv_md5 != "VALID":
+            if decryptedData[2] == recv_md5:
+                checkpoint("Checksum is VALID")
             #    sys.exit(1)
             checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(recv_key, recv_plaintext, recv_md5))
 
@@ -83,7 +95,7 @@ def accept_connections(socket, size):
             send_data.extend(map(ord, answer))
             client.send(send_data)
             checkpoint("Sending data: {}".format(send_data))
-            
+
             client.close()
 
 
@@ -119,14 +131,14 @@ def main():
 
     # Setup socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host,port))  
+    s.bind((host,port))
     checkpoint("Created socket at {} on port {}".format(host, port))
-    
+
     # Start listening
     checkpoint("Listening for client connections")
     s.listen(backlog)
 
-   
+
     # Start accepting connections
     accept_connections(s, size)
 
