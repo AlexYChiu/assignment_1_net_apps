@@ -52,6 +52,10 @@ def ask_wa(message):
 def speak(message):
     """Speaks given message"""
     checkpoint("Speaking: {}".format(message))
+    
+    tts = gTTS(text=message, lang='en')
+    tts.save("saythis.mp3")
+    os.system("mplayer saythis.mp3")
 
 def decrypt_data(data):
     """Verify md5 and decrypt data"""
@@ -133,7 +137,7 @@ def main():
         print('Please set socket size with the -z flag.')
         sys.exit(1)
 
-    host = 'localhost'
+    host = '0.0.0.0'
 
     # Copy args into vars
     try:

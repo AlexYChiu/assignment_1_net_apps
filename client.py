@@ -17,6 +17,7 @@ import tweepy
 from cryptography.fernet import Fernet
 import hashlib
 import pickle
+from gtts import gTTS
 
 from clientKeys import ClientKeys
 
@@ -28,6 +29,10 @@ def checkpoint(message):
 def speak(message):
     """Speaks given message"""
     checkpoint("Speaking: {}".format(message))
+
+    tts = gTTS(text=message, lang='en')
+    tts.save("saythis.mp3")
+    os.system("mplayer saythis.mp3")
 
 def process_response(data):
     """Processes received data"""
