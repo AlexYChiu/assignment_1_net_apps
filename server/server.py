@@ -63,6 +63,10 @@ def accept_connections(socket, size):
     """Repeatedly accepts and handles new client connections"""
     while 1:
         client, address = socket.accept()
+        client_addr = client.getpeername()[0]
+        client_port = client.getpeername()[1]
+        checkpoint("Accepted client connection from {} on port {}".format(
+            client_addr, client_port))
 
         data = client.recv(size)
         if data:
