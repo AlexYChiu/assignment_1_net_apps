@@ -27,6 +27,9 @@ def checkpoint(message):
 
 def speak(message):
     """Speaks given message"""
+
+    # TODO - Send to speech API
+
     checkpoint("Speaking: {}".format(message))
 
 def process_response(data, key):

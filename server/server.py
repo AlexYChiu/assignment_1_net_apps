@@ -12,11 +12,12 @@
 import sys
 import argparse
 import socket
+import hashlib
+import pickle
 
 from serverKeys import wolfram_alpha_appid
 from cryptography.fernet import Fernet
-import hashlib
-import pickle
+import wolframalpha
 
 def checkpoint(message):
     """Prints [Checkpoint] <message>"""
@@ -34,14 +35,19 @@ def ask_wa(message):
     """Asks Wolfram Alpha messasge"""
     checkpoint("Sending question to Wolframalpha: {}".format(message))
 
-    # TODO ask wa
-    answer = "TODO"
+    client = wolframalpha.Client(wolfram_alpha_appid)
+    res = client.query(message)
+    answer = next(res.results).text
+
     checkpoint("Received answer to Wolframalpha: {}".format(answer))
 
     return answer
 
 def speak(message):
     """Speaks given message"""
+
+    # TODO - Send to speech API
+
     checkpoint("Speaking: {}".format(message))
 
 def decrypt_data(data):
@@ -81,7 +87,7 @@ def accept_connections(socket, size):
             if decryptedData[2] == recv_md5:
                 checkpoint("Checksum is VALID")
             #    sys.exit(1)
-            checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(recv_key, recv_plaintext, recv_md5))
+            checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(recv_key, recv_plaintext))
 
             # Speak data
             speak(recv_plaintext)
@@ -141,7 +147,6 @@ def main():
     # Start listening
     checkpoint("Listening for client connections")
     s.listen(backlog)
-
 
     # Start accepting connections
     accept_connections(s, size)
