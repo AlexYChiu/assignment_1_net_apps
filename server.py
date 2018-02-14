@@ -12,24 +12,30 @@
 import sys
 import argparse
 import socket
-import hashlib
-import pickle
 
 from serverKeys import wolfram_alpha_appid
 from cryptography.fernet import Fernet
 import wolframalpha
+import hashlib
+import pickle
 
 def checkpoint(message):
     """Prints [Checkpoint] <message>"""
     print("[Checkpoint] {}".format(message))
 
-def encrypt_data(data):
+def encrypt_data(data, key):
     """Encrypt given data and returns key, ciphertest, and md5"""
-    key = "TODO"
-    ciphertext = "TODO"
-    md5 = "TODO"
+    #has to be the same key because the client only has the key it sent the data with
+    cipher_suite = Fernet(key)
+    bytedata = data.encode() #defaults to utf-8
+    ciphertext = cipher_suite.encrypt(bytedata) #encrypt the Answer
 
-    return key, ciphertext, md5
+    #determine the md5 of cipher text
+    temp = hashlib.md5()
+    temp.update(ciphertext)
+    md5 = temp.digest()
+
+    return ciphertext, md5
 
 def ask_wa(message):
     """Asks Wolfram Alpha messasge"""
@@ -45,9 +51,6 @@ def ask_wa(message):
 
 def speak(message):
     """Speaks given message"""
-
-    # TODO - Send to speech API
-
     checkpoint("Speaking: {}".format(message))
 
 def decrypt_data(data):
@@ -81,13 +84,13 @@ def accept_connections(socket, size):
             # Decrypt data
             decryptedData = pickle.loads(data)
             recv_key, recv_plaintext, recv_md5 = decrypt_data(decryptedData)
-            checkpoint("Checksum is {}".format(recv_md5))
-            # TODO STILL need to compare to the md5 sent over to verify and output VALID
+            #checkpoint("Checksum is {}".format(recv_md5))
+
             #if recv_md5 != "VALID":
             if decryptedData[2] == recv_md5:
                 checkpoint("Checksum is VALID")
-            #    sys.exit(1)
-            checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(recv_key, recv_plaintext))
+            # else   sys.exit(1)
+            checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(recv_key, recv_plaintext, recv_md5))
 
             # Speak data
             speak(recv_plaintext)
@@ -96,13 +99,15 @@ def accept_connections(socket, size):
             answer = ask_wa(recv_plaintext)
 
             # Encrypt response
-            send_key, send_ciphertext, send_md5 = encrypt_data(answer)
-            checkpoint("Encrypt: Generated Key: {} | Ciphertext: {}".format(send_key, send_ciphertext))
+            send_ciphertext, send_md5 = encrypt_data(answer, recv_key)
+            checkpoint("Encrypt: Generated Key: {} | Ciphertext: {}".format(recv_key, send_ciphertext))
             checkpoint("Generated MD5 Checksum: {}".format(send_md5))
 
             # Send response back to client
-            send_data = bytearray()
-            send_data.extend(map(ord, answer))
+            dataTup = (recv_key, send_ciphertext, send_md5)
+            #send_data = bytearray()
+            #send_data.extend(map(ord, answer))
+            send_data = pickle.dumps(dataTup)
             client.send(send_data)
             checkpoint("Sending data: {}".format(send_data))
 
@@ -147,6 +152,7 @@ def main():
     # Start listening
     checkpoint("Listening for client connections")
     s.listen(backlog)
+
 
     # Start accepting connections
     accept_connections(s, size)

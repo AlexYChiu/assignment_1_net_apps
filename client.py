@@ -27,28 +27,33 @@ def checkpoint(message):
 
 def speak(message):
     """Speaks given message"""
-
-    # TODO - Send to speech API
-
     checkpoint("Speaking: {}".format(message))
 
-def process_response(data, key):
+def process_response(data):
     """Processes received data"""
     # Print received data
     checkpoint("Received data: {}".format(data))
 
-    # TODO check checksum
-    md5 = "TODO"
-    checkpoint("Checksum is {}".format(md5))
+    response = pickle.loads(data)
 
-    # TODO Decrypt
-    #key = "TODO"
+    #check checksum
+    temp = hashlib.md5()
+    temp.update(response[1])
+    md5 = temp.digest()
+    #checkpoint("Checksum is {}".format(md5))
+
+    if md5 == response[2]:
+        checkpoint("Checksum is VALID")
+
+    #decrypt response
+    key = response[0]
     cipher_suite = Fernet(key)
-    plaintext = cipher_suite.decrypt(data)
+    plaintext = cipher_suite.decrypt(response[1])
     checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(key, plaintext))
 
-    # TODO Speak Answer
+    #Speak Answer
     speak(plaintext)
+
 
 def encrypt_data(data, key):
     """Encrypts data and returns key, ciphertext, and md5sum"""
@@ -119,7 +124,7 @@ class MyStreamListener(tweepy.StreamListener):
 
             # Receive & process server response
             recv_data = s.recv(self.size)
-            process_response(recv_data, key)
+            process_response(recv_data)
 
             s.close()
 
