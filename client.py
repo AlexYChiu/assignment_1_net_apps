@@ -26,13 +26,15 @@ def checkpoint(message):
     """Prints [Checkpoint] <message>"""
     print("[Checkpoint] {}".format(message))
 
+
 def speak(message):
     """Speaks given message"""
     checkpoint("Speaking: {}".format(message))
 
     tts = gTTS(text=message, lang='en')
     tts.save("saythis.mp3")
-    os.system("mplayer saythis.mp3")
+    os.system("mplayer saythis.mp3 &> /dev/null && rm saythis.mp3")
+
 
 def process_response(data):
     """Processes received data"""
@@ -41,34 +43,37 @@ def process_response(data):
 
     response = pickle.loads(data)
 
-    #check checksum
+    # Check checksum
     temp = hashlib.md5()
     temp.update(response[1])
     md5 = temp.digest()
-    #checkpoint("Checksum is {}".format(md5))
 
+    # Checkpoint for md5
     if md5 == response[2]:
         checkpoint("Checksum is VALID")
+    else:
+        checkpoint("Checksum is INVALID")
 
-    #decrypt response
+    # Decrypt response
     key = response[0]
     cipher_suite = Fernet(key)
     plaintext = cipher_suite.decrypt(response[1])
     checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(key, plaintext))
 
-    #Speak Answer
-    speak(plaintext)
+    # Speak Answer
+    speak(plaintext.decode())
 
 
 def encrypt_data(data, key):
     """Encrypts data and returns key, ciphertext, and md5sum"""
 
-    #use cipher key to encrypt data
+    # Use cipher key to encrypt data
     cipher_suite = Fernet(key)
-    bytedata = data.encode() #defaults to utf-8
+    # Defaults to utf-8
+    bytedata = data.encode()
     ciphertext = cipher_suite.encrypt(bytedata)
 
-    #calculate the md5 of the ciphertext for checksum
+    # Calculate the md5 of the ciphertext
     temp = hashlib.md5()
     temp.update(ciphertext)
     md5 = temp.digest()
@@ -96,34 +101,34 @@ class MyStreamListener(tweepy.StreamListener):
 
     def on_status(self, status):
         """Send query to server and receive answer """
-        checkpoint("New Tweet: {} | User: {}".format(status.text, status.user.name))
+        checkpoint("New Tweet: {} | User: {}".format(status.text,
+            status.user.name))
 
         # Parse out hashtag
         question = status.text.replace(self.hashtag, '').strip()
 
-        #Encrpytion
+        # Encrpytion
         key = Fernet.generate_key()
         ciphertext, md5 = encrypt_data(question, key)
-        checkpoint("Encrypt: Generated Key: {} | Ciphertext: {}".format(key, ciphertext))
+        checkpoint("Encrypt: Generated Key: {} | Ciphertext: {}"
+            .format(key, ciphertext))
         checkpoint("Generated MD5 Checksum: {}".format(md5))
 
         # Try to send query to server
         try:
-            checkpoint("Connecting to {} on port {}".format(self.host, self.port))
+            checkpoint("Connecting to {} on port {}"
+                .format(self.host, self.port))
 
             # https://github.com/Microsoft/vscode/issues/39149#issuecomment-
             #    347260954
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((self.host,self.port))
 
-            # Send to server
-            dataTup = (key, ciphertext, md5) #put everything together
-
-            #write data to file
-            #send_data = bytearray()
-            #send_data.extend(map(ord, question))
+            # Combine data
+            dataTup = (key, ciphertext, md5)
             send_data = pickle.dumps(dataTup)
 
+            # Send to server
             s.send(send_data)
             checkpoint("Sending data: {}".format(send_data))
 
@@ -149,7 +154,8 @@ def authenticate(consumer_token, consumer_secret, access_key, access_secret,
 
         # Using info from http://docs.tweepy.org/en/v3.5.0/
         #   streaming_how_to.html
-        myStreamListener = MyStreamListener(host=host, port=port, size=size, hashtag=hashtag)
+        myStreamListener = MyStreamListener(host=host, port=port,
+            size=size, hashtag=hashtag)
         myStream = tweepy.Stream(auth=api.auth, listener=myStreamListener)
 
         # Start listening for tweets with given hashtag

@@ -9,15 +9,19 @@
     4. Sending answer to client.
 """
 
+import os
 import sys
 import argparse
 import socket
 
-from serverKeys import wolfram_alpha_appid
 from cryptography.fernet import Fernet
 import wolframalpha
 import hashlib
 import pickle
+from gtts import gTTS
+
+from serverKeys import wolfram_alpha_appid
+
 
 def checkpoint(message):
     """Prints [Checkpoint] <message>"""
@@ -25,12 +29,15 @@ def checkpoint(message):
 
 def encrypt_data(data, key):
     """Encrypt given data and returns key, ciphertest, and md5"""
-    #has to be the same key because the client only has the key it sent the data with
+    # Has to be the same key because the client only has the key it 
+    #     sent the data with
     cipher_suite = Fernet(key)
-    bytedata = data.encode() #defaults to utf-8
-    ciphertext = cipher_suite.encrypt(bytedata) #encrypt the Answer
+    # Defaults to utf-8
+    bytedata = data.encode()
+    # Encrypt WA Answer
+    ciphertext = cipher_suite.encrypt(bytedata)
 
-    #determine the md5 of cipher text
+    # Determine the md5 of ciphertext
     temp = hashlib.md5()
     temp.update(ciphertext)
     md5 = temp.digest()
@@ -41,9 +48,16 @@ def ask_wa(message):
     """Asks Wolfram Alpha messasge"""
     checkpoint("Sending question to Wolframalpha: {}".format(message))
 
+    # Get answer from WA
     client = wolframalpha.Client(wolfram_alpha_appid)
     res = client.query(message)
-    answer = next(res.results).text
+    
+    # Handle bad queries to WA
+    try:
+        answer = next(res.results).text
+    except Exception as ex:
+        answer = "Wolfram Alpha was unable to find an answer for {}. \
+            Please try something else.".format(message)
 
     checkpoint("Received answer to Wolframalpha: {}".format(answer))
 
@@ -52,20 +66,21 @@ def ask_wa(message):
 def speak(message):
     """Speaks given message"""
     checkpoint("Speaking: {}".format(message))
-    
+   
     tts = gTTS(text=message, lang='en')
     tts.save("saythis.mp3")
-    os.system("mplayer saythis.mp3")
+    os.system("mplayer saythis.mp3 &> /dev/null && rm saythis.mp3")
 
 def decrypt_data(data):
     """Verify md5 and decrypt data"""
-    #data should be formatted (key, ciphertext, md5)
-    #newData = pickle.loads(data)
-
+    # Data should be formatted as the tuple: (key, ciphertext, md5)
+    
+    # Extract key & decrypt data
     key = data[0]
     cipher_suite = Fernet(key)
     plaintext = cipher_suite.decrypt(data[1])
 
+    # Get md5 of data
     temp = hashlib.md5()
     temp.update(data[1])
     md5 = temp.digest()
@@ -88,29 +103,30 @@ def accept_connections(socket, size):
             # Decrypt data
             decryptedData = pickle.loads(data)
             recv_key, recv_plaintext, recv_md5 = decrypt_data(decryptedData)
-            #checkpoint("Checksum is {}".format(recv_md5))
 
-            #if recv_md5 != "VALID":
+            # Check if md5 is valid
             if decryptedData[2] == recv_md5:
                 checkpoint("Checksum is VALID")
-            # else   sys.exit(1)
-            checkpoint("Decrypt: Using Key: {} | Plaintext: {}".format(recv_key, recv_plaintext, recv_md5))
+            else:
+                checkpoint("Checksum is INVALID")
+            
+            checkpoint("Decrypt: Using Key: {} | Plaintext: {}"
+                .format(recv_key, recv_plaintext, recv_md5))
 
             # Speak data
-            speak(recv_plaintext)
+            speak(recv_plaintext.decode())
 
             # Ask WA
-            answer = ask_wa(recv_plaintext)
+            answer = ask_wa(recv_plaintext.decode())
 
             # Encrypt response
             send_ciphertext, send_md5 = encrypt_data(answer, recv_key)
-            checkpoint("Encrypt: Generated Key: {} | Ciphertext: {}".format(recv_key, send_ciphertext))
+            checkpoint("Encrypt: Generated Key: {} | Ciphertext: {}"
+                .format(recv_key, send_ciphertext))
             checkpoint("Generated MD5 Checksum: {}".format(send_md5))
 
             # Send response back to client
             dataTup = (recv_key, send_ciphertext, send_md5)
-            #send_data = bytearray()
-            #send_data.extend(map(ord, answer))
             send_data = pickle.dumps(dataTup)
             client.send(send_data)
             checkpoint("Sending data: {}".format(send_data))
