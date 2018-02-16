@@ -19,7 +19,7 @@ import hashlib
 import pickle
 from gtts import gTTS
 
-from clientKeys import ClientKeys
+import clientKeys
 
 
 def checkpoint(message):
@@ -141,12 +141,12 @@ class MyStreamListener(tweepy.StreamListener):
         except Exception as ex:
             print(ex)
 
-def authenticate(consumer_token, consumer_secret, access_key, access_secret,
+def authenticate(consumer_key, consumer_secret, access_token, access_token_secret,
         host, port, size, hashtag):
     """Authenticates with Twitter and listens for hashtag"""
     # "Log in"
-    auth = tweepy.OAuthHandler(consumer_token, consumer_secret)
-    auth.set_access_token(access_key, access_secret)
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
 
     # Start tracking the stream
     try:
@@ -203,13 +203,12 @@ def main():
     checkpoint("Listening for Tweets that contain: {}".format(hashtag))
 
     # Get needed information for authorization
-    api_keys = ClientKeys()
-    consumer_token = api_keys.get_consumer_token()
-    consumer_secret = api_keys.get_consumer_secret()
-    access_key = api_keys.get_access_key()
-    access_secret = api_keys.get_access_secret()
+    consumer_key = clientKeys.consumer_key
+    consumer_secret = clientKeys.consumer_secret
+    access_token = clientKeys.access_token
+    access_token_secret = clientKeys.access_token_secret
 
-    authenticate(consumer_token, consumer_secret, access_key, \
-        access_secret, host, port, size, hashtag)
+    authenticate(consumer_key, consumer_secret, access_token, \
+        access_token_secret, host, port, size, hashtag)
 
 main()
