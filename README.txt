@@ -10,11 +10,11 @@ Group Member Contributions
 Paul Walko - Checkpoints, a lot of organization, speaking
 Email: pwalko@vt.edu
 
-Celine Stewart - Encryption/decryption, checksums, wolfram alpha
-Email:
+Celine Stewart - Encryption/decryption, md5 checksums, pickle
+Email: Celine20@vt.edu
 
-Chris Ruppelt - Twitter authentication, implement core send/receive part of server
-Email
+Chris Ruppelt - Twitter authentication, implement core send/receive part of server, wolfram alpha
+Email: cruppelt@vt.edu
 
 
 Usage
