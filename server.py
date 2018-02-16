@@ -68,8 +68,8 @@ def speak(message):
     checkpoint("Speaking: {}".format(message))
    
     tts = gTTS(text=message, lang='en')
-    tts.save("saythis.mp3")
-    os.system("mplayer saythis.mp3 &> /dev/null && rm saythis.mp3")
+    tts.save("./saythis.mp3")
+    os.system("mplayer ./saythis.mp3 > /dev/null 2>&1")
 
 def decrypt_data(data):
     """Verify md5 and decrypt data"""
