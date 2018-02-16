@@ -102,7 +102,7 @@ class MyStreamListener(tweepy.StreamListener):
     def on_status(self, status):
         """Send query to server and receive answer """
         checkpoint("New Tweet: {} | User: {}".format(status.text,
-            status.user.name))
+            status.user.screen_name))
 
         # Parse out hashtag
         question = status.text.replace(self.hashtag, '').strip()
