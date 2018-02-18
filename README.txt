@@ -4,6 +4,9 @@ Assignment 1 Network Application Design
 First assignment for ECE 4564.
 -----------------------------
 
+All libraries used were the recommended ones from the Rubric.
+
+
 Group Member Contributions
 ==========================
 
